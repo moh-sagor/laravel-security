@@ -301,6 +301,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Route Encryption (Dynamic Encrypted URLs for Dynamic & Resource Routes)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, configured application routes (e.g. /products/5/edit) are
+    | automatically generated as encrypted URLs (e.g. /e/eyJpZCI6NX0...).
+    | When accessed, requests are decrypted and dispatched to original controllers.
+    | Works for dynamic parameters (edit, view, delete) and wildcard patterns.
+    |
+    */
+
+    'route_encryption' => [
+        'enabled' => (bool) env('SECURITY_ROUTE_ENCRYPTION', true),
+        'prefix' => 'e',
+        'key' => env('SECURITY_ROUTE_ENCRYPT_KEY', null),
+        'routes' => [
+            // Add route names or wildcard patterns to encrypt, e.g.:
+            // 'products.show',
+            // 'products.edit',
+            'products.*',
+            // 'admin.*',
+        ],
+        'exclude' => [
+            'login',
+            'logout',
+            'password.*',
+            'security.*',
+            'api.*',
+            'webhooks.*',
+            'sanctum.*',
+        ],
+        'auto_encrypt_route_helper' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Response Security Headers
     |--------------------------------------------------------------------------
     */

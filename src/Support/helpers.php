@@ -1,34 +1,6 @@
 <?php
 
-use Sagor\LaravelSecurity\Firewall\SecurityEngine;
-
-if (!function_exists('security')) {
-    /**
-     * Get the Laravel Security Firewall engine instance or resolve security services.
-     *
-     * @return SecurityEngine|mixed
-     */
-    function security()
-    {
-        if (function_exists('app') && app()->bound(SecurityEngine::class)) {
-            return app(SecurityEngine::class);
-        }
-
-        return null;
-    }
-}
-
-if (!function_exists('shield')) {
-    /**
-     * Alias for security() helper.
-     *
-     * @return SecurityEngine|mixed
-     */
-    function shield()
-    {
-        return security();
-    }
-}
+use Sagor\LaravelSecurity\Route\RouteEncryptor;
 
 if (!function_exists('encrypt_route')) {
     /**
@@ -50,7 +22,7 @@ if (!function_exists('encrypt_route')) {
             parse_str($query, $queryParams);
         }
 
-        $encryptor = app(\Sagor\LaravelSecurity\Route\RouteEncryptor::class);
+        $encryptor = app(RouteEncryptor::class);
         $encryptedPath = $encryptor->encrypt($path, $queryParams);
 
         return url($encryptedPath, [], $absolute);
@@ -77,7 +49,7 @@ if (!function_exists('encrypt_url')) {
             parse_str($urlQuery, $queryParams);
         }
 
-        $encryptor = app(\Sagor\LaravelSecurity\Route\RouteEncryptor::class);
+        $encryptor = app(RouteEncryptor::class);
         $encryptedPath = $encryptor->encrypt($urlPath, $queryParams);
 
         return url($encryptedPath, [], $secure);
@@ -93,7 +65,7 @@ if (!function_exists('decrypt_route_token')) {
      */
     function decrypt_route_token(string $token): ?array
     {
-        $encryptor = app(\Sagor\LaravelSecurity\Route\RouteEncryptor::class);
+        $encryptor = app(RouteEncryptor::class);
         return $encryptor->decrypt($token);
     }
 }

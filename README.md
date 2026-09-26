@@ -329,6 +329,55 @@ public function boot()
 
 ---
 
+## 🔒 Dynamic Route Encryption
+
+**`sagor/laravel-security`** allows you to define standard Laravel routes as normal in `routes/web.php`, while dynamically displaying them as encrypted URLs in browser links, address bars, and forms.
+
+### 1. Define Routes Normally in `routes/web.php`
+
+```php
+Route::resource('products', ProductController::class);
+// Or individual dynamic routes:
+Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->name('products.edit');
+```
+
+### 2. Configure Target Encrypted Routes (`config/security.php`)
+
+Add target route names or wildcard patterns to `route_encryption.routes`:
+
+```php
+'route_encryption' => [
+    'enabled' => true,
+    'prefix' => 'e', // Generates URLs like /e/eyJpZCI6NX0...
+    'routes' => [
+        'products.show',
+        'products.edit',
+        'products.*', // Encrypt all product resource routes!
+        'admin.*',
+    ],
+    'auto_encrypt_route_helper' => true,
+],
+```
+
+### 3. URL Generation & Blade Directives
+
+In Blade templates or controllers, generate encrypted URLs using helpers or Blade directives:
+
+```blade
+<!-- Using Blade directive: -->
+<a href="@encryptRoute('products.edit', $product->id)">Edit Product</a>
+
+<!-- Or using global helper: -->
+<a href="{{ encrypt_route('products.edit', $product->id) }}">Edit Product</a>
+
+<!-- Or encrypting direct path: -->
+<a href="@encryptUrl('/products/5/edit')">Edit Product</a>
+```
+
+When a user clicks the encrypted link (`/e/eyJpZCI6NX0...`), the package automatically decrypts the token, verifies MAC integrity, and dispatches the request to `ProductController@edit($id)` seamlessly!
+
+---
+
 ## 📄 License & Credits
 
 - **Author / Developer**: **Moh Sagor**
