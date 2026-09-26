@@ -1,0 +1,2390 @@
+# MASTER DEVELOPMENT PROMPT
+
+## Build a Production-Ready Laravel Security Firewall Package
+
+You are a senior Laravel package architect, application-security engineer, PHP developer, DevSecOps engineer, and open-source maintainer.
+
+Your task is to design and implement a **production-ready Laravel security package** called:
+
+**Laravel Shield**
+
+Suggested Composer package:
+
+```text
+moh-sagor/laravel-shield
+```
+
+The package must act as a **defense-in-depth application security firewall for Laravel applications**, protecting both traditional web applications and APIs.
+
+The package must be modular, configurable, performant, testable, extensible, and safe to install into existing Laravel applications without breaking their existing functionality.
+
+---
+
+# 1. CORE OBJECTIVE
+
+Build a Laravel package that can be installed into an existing Laravel application with approximately:
+
+```bash
+composer require moh-sagor/laravel-shield
+php artisan shield:install
+php artisan migrate
+```
+
+After installation, the package should automatically provide security protections with minimal manual configuration.
+
+The package must protect against common application-layer threats including:
+
+* SQL injection attempts
+* XSS attempts
+* Path traversal
+* Local file inclusion patterns
+* Remote file inclusion patterns
+* Command injection patterns
+* SSRF attempts
+* Malicious HTTP requests
+* Suspicious query parameters
+* Suspicious request bodies
+* HTTP parameter pollution
+* Brute-force attacks
+* Credential stuffing patterns
+* Login abuse
+* API abuse
+* Excessive request rates
+* Application-layer DoS
+* Bot/scanner activity
+* Malicious file uploads
+* Dangerous file types
+* MIME spoofing
+* File signature mismatch
+* PHP/script uploads
+* Archive bombs / decompression bombs
+* Suspicious archive contents
+* Security scanner requests
+* Automated probing
+* Excessive 404/403 activity
+* Security-sensitive route enumeration
+* Suspicious user agents
+* Header anomalies
+* Oversized requests
+* Suspicious URL encoding
+* Double encoding
+* Null-byte attacks
+* Basic protocol/request anomalies
+
+The package must NOT claim that it can stop every possible cyberattack.
+
+Clearly separate:
+
+1. Application-layer protection
+2. Server-level protection
+3. Network-level DDoS protection
+
+The package should provide application-layer protection and integrations/hooks for external WAF/CDN/firewall systems.
+
+---
+
+# 2. IMPORTANT SECURITY PRINCIPLE
+
+Do NOT build a simplistic keyword-based security system such as:
+
+```php
+if (str_contains($input, 'select')) {
+    abort(403);
+}
+```
+
+That approach creates huge false-positive problems.
+
+Instead create a proper security analysis engine.
+
+Every detector should return structured information such as:
+
+```php
+RuleResult
+```
+
+containing:
+
+```php
+[
+    'detected' => true,
+    'rule' => 'xss.script_tag',
+    'severity' => 'high',
+    'confidence' => 0.97,
+    'score' => 85,
+    'message' => 'Potential XSS payload detected.',
+]
+```
+
+The firewall should combine results and make a final decision.
+
+Possible actions:
+
+```text
+allow
+log
+monitor
+throttle
+challenge
+quarantine
+block
+```
+
+---
+
+# 3. SECURITY DECISION ENGINE
+
+Implement a central security engine:
+
+```php
+SecurityEngine
+```
+
+Flow:
+
+```text
+Incoming Request
+       ↓
+Request Normalizer
+       ↓
+Security Context
+       ↓
+Detector Pipeline
+       ↓
+Rule Results
+       ↓
+Risk Scoring Engine
+       ↓
+Policy Engine
+       ↓
+ALLOW / LOG / THROTTLE / BLOCK
+```
+
+Create classes such as:
+
+```text
+SecurityEngine
+SecurityContext
+SecurityDecision
+SecurityRule
+SecurityRuleResult
+RiskScore
+SecurityPolicy
+```
+
+Each rule must be independent.
+
+---
+
+# 4. PACKAGE ARCHITECTURE
+
+Use a clean Laravel package structure.
+
+Recommended structure:
+
+```text
+src/
+├── ShieldServiceProvider.php
+│
+├── Contracts/
+│   ├── SecurityRule.php
+│   ├── MalwareScanner.php
+│   ├── BotDetector.php
+│   ├── ThreatIntelligence.php
+│   └── RouteObfuscator.php
+│
+├── Firewall/
+│   ├── SecurityEngine.php
+│   ├── SecurityContext.php
+│   ├── SecurityDecision.php
+│   ├── SecurityRuleResult.php
+│   ├── RuleRegistry.php
+│   └── Rules/
+│       ├── SqlInjectionRule.php
+│       ├── XssRule.php
+│       ├── PathTraversalRule.php
+│       ├── CommandInjectionRule.php
+│       ├── SsrfRule.php
+│       ├── ScannerDetectionRule.php
+│       ├── SuspiciousUserAgentRule.php
+│       ├── RequestSizeRule.php
+│       ├── ParameterPollutionRule.php
+│       ├── EncodingAttackRule.php
+│       └── ...
+│
+├── Http/
+│   ├── Middleware/
+│   │   ├── ShieldMiddleware.php
+│   │   ├── ShieldApiMiddleware.php
+│   │   └── ShieldUploadMiddleware.php
+│   └── Controllers/
+│
+├── Upload/
+│   ├── UploadSecurityManager.php
+│   ├── FileAnalyzer.php
+│   ├── FileSignatureValidator.php
+│   ├── FilenameValidator.php
+│   ├── ArchiveAnalyzer.php
+│   ├── QuarantineManager.php
+│   └── Scanners/
+│       ├── ClamAvScanner.php
+│       └── NullScanner.php
+│
+├── RateLimit/
+│   ├── RateLimiter.php
+│   ├── RateLimitPolicy.php
+│   └── ThreatTracker.php
+│
+├── Bot/
+│   ├── BotDetector.php
+│   ├── BotScore.php
+│   └── BehaviorAnalyzer.php
+│
+├── Route/
+│   ├── RouteObfuscator.php
+│   ├── RouteResolver.php
+│   ├── RouteMap.php
+│   └── RouteRegistry.php
+│
+├── Threat/
+│   ├── ThreatManager.php
+│   ├── ThreatEvent.php
+│   └── ThreatSeverity.php
+│
+├── Models/
+│   ├── SecurityEvent.php
+│   ├── BlockedIp.php
+│   ├── SecurityRule.php
+│   └── MalwareScan.php
+│
+├── Events/
+│   ├── SecurityThreatDetected.php
+│   ├── SecurityRequestBlocked.php
+│   ├── MaliciousUploadDetected.php
+│   └── IpBlocked.php
+│
+├── Listeners/
+│
+├── Console/
+│   └── Commands/
+│       ├── InstallCommand.php
+│       ├── ScanCommand.php
+│       ├── RoutesCommand.php
+│       ├── ClearCommand.php
+│       ├── ReportCommand.php
+│       └── TestCommand.php
+│
+├── Dashboard/
+│
+└── Support/
+    ├── SecurityLogger.php
+    ├── IpResolver.php
+    ├── PayloadNormalizer.php
+    └── Helpers.php
+```
+
+Use PSR-4 autoloading.
+
+Use strict typing where practical.
+
+Follow Laravel coding conventions.
+
+---
+
+# 5. COMPATIBILITY
+
+Target modern Laravel versions.
+
+Structure the package so Laravel version compatibility can be clearly defined in Composer.
+
+Support:
+
+```text
+PHP 8.3+
+Laravel 12+
+Laravel 13+
+```
+
+If implementation details differ between framework versions, use compatibility layers rather than duplicating the entire package.
+
+Do not use deprecated Laravel APIs.
+
+---
+
+# 6. INSTALLATION
+
+The package must provide:
+
+```bash
+php artisan shield:install
+```
+
+The installer should:
+
+1. Publish configuration
+2. Publish migrations
+3. Register required middleware
+4. Create required directories
+5. Detect Redis availability
+6. Detect ClamAV availability
+7. Display installation status
+8. Avoid modifying user application code unnecessarily
+9. Never overwrite an existing configuration without confirmation
+10. Be safe to run multiple times
+
+Example:
+
+```text
+Laravel Shield Security
+
+✓ Configuration published
+✓ Migrations published
+✓ Security directories created
+✓ Middleware registered
+✓ Cache system detected
+✓ Redis detected
+✓ ClamAV detected
+
+Shield installation completed successfully.
+```
+
+If Redis is unavailable:
+
+```text
+! Redis not detected.
+
+Shield will use the configured fallback cache driver.
+```
+
+Do not fail installation unnecessarily.
+
+---
+
+# 7. CONFIGURATION
+
+Create:
+
+```text
+config/shield.php
+```
+
+Example:
+
+```php
+return [
+
+    'enabled' => true,
+
+    'mode' => env('SHIELD_MODE', 'balanced'),
+
+    'web' => [
+        'enabled' => true,
+    ],
+
+    'api' => [
+        'enabled' => true,
+        'rate_limit' => 120,
+        'burst' => 30,
+    ],
+
+    'firewall' => [
+
+        'sql_injection' => true,
+        'xss' => true,
+        'path_traversal' => true,
+        'command_injection' => true,
+        'ssrf' => true,
+        'scanner_detection' => true,
+        'bot_detection' => true,
+        'parameter_pollution' => true,
+        'encoding_attacks' => true,
+    ],
+
+    'uploads' => [
+
+        'enabled' => true,
+
+        'max_size' => 20 * 1024,
+
+        'allowed_extensions' => [
+            'jpg',
+            'jpeg',
+            'png',
+            'webp',
+            'gif',
+            'pdf',
+            'doc',
+            'docx',
+        ],
+
+        'validate_mime' => true,
+
+        'validate_signature' => true,
+
+        'malware_scan' => true,
+
+        'scanner' => 'clamav',
+
+        'quarantine' => true,
+
+        'reject_executable' => true,
+
+        'archive_scan' => true,
+
+        'max_archive_files' => 1000,
+
+        'max_archive_size' => 100 * 1024 * 1024,
+    ],
+
+    'bot' => [
+
+        'enabled' => true,
+
+        'behavior_detection' => true,
+
+        'block_known_scanners' => true,
+
+    ],
+
+    'ddos' => [
+
+        'enabled' => true,
+
+        'requests_per_minute' => 120,
+
+        'burst' => 30,
+
+        'temporary_block' => true,
+
+        'block_duration' => 3600,
+
+    ],
+
+    'route_obfuscation' => [
+
+        'enabled' => false,
+
+        'prefix' => 'r',
+
+        'routes' => [],
+
+        'api' => false,
+
+    ],
+
+    'headers' => [
+
+        'enabled' => true,
+
+        'hsts' => true,
+
+        'content_type_options' => true,
+
+        'frame_options' => true,
+
+        'referrer_policy' => true,
+
+        'permissions_policy' => true,
+
+    ],
+
+    'logging' => [
+
+        'enabled' => true,
+
+        'database' => true,
+
+        'channel' => 'daily',
+
+    ],
+
+];
+```
+
+Every setting must be documented.
+
+---
+
+# 8. SECURITY MODES
+
+Implement:
+
+```text
+monitor
+balanced
+strict
+```
+
+### monitor
+
+Detect and log.
+
+Do not block requests except for extremely dangerous cases explicitly configured.
+
+### balanced
+
+Block high-confidence threats.
+
+Throttle suspicious behavior.
+
+### strict
+
+More aggressive protection.
+
+Every mode must be configurable.
+
+---
+
+# 9. WEB PROTECTION
+
+Protect normal Laravel web requests.
+
+Inspect:
+
+```text
+GET
+POST
+PUT
+PATCH
+DELETE
+OPTIONS
+```
+
+Inspect:
+
+```text
+query parameters
+route parameters
+headers
+cookies where appropriate
+request body
+JSON
+form data
+multipart data
+```
+
+Do not unnecessarily inspect sensitive authentication secrets in plaintext logs.
+
+Never store:
+
+```text
+password
+password_confirmation
+credit card numbers
+authorization tokens
+API keys
+session cookies
+```
+
+in security logs.
+
+Use redaction/hashing.
+
+---
+
+# 10. API PROTECTION
+
+Detect API abuse.
+
+Support:
+
+```text
+IP-based rate limiting
+User-based rate limiting
+API-token-based rate limiting
+Route-based rate limiting
+Burst detection
+Authentication failure detection
+Endpoint abuse
+Large request detection
+Repeated invalid requests
+```
+
+Example:
+
+```text
+POST /api/login
+```
+
+If one IP repeatedly attempts login:
+
+```text
+5 failures
+    ↓
+warning
+
+20 failures
+    ↓
+temporary throttle
+
+50 failures
+    ↓
+temporary block
+```
+
+Do not permanently ban users automatically without configurable policies.
+
+---
+
+# 11. SQL INJECTION DETECTOR
+
+Create:
+
+```php
+SqlInjectionRule
+```
+
+It should detect common SQL injection patterns and encoded variants.
+
+Normalize input before analysis.
+
+Handle:
+
+```text
+URL encoding
+double encoding
+Unicode normalization where appropriate
+case variations
+comments
+whitespace manipulation
+common SQL syntax patterns
+```
+
+Do NOT interfere with legitimate Laravel query builders.
+
+This detector only analyzes incoming HTTP input.
+
+It is not a replacement for parameterized queries.
+
+---
+
+# 12. XSS DETECTOR
+
+Create:
+
+```php
+XssRule
+```
+
+Detect common reflected/stored XSS payload patterns.
+
+Analyze:
+
+```text
+HTML tags
+script contexts
+event handlers
+javascript URLs
+SVG payloads
+encoded payloads
+HTML entities
+```
+
+Use confidence scoring.
+
+Avoid simplistic substring blocking.
+
+---
+
+# 13. PATH TRAVERSAL
+
+Create:
+
+```php
+PathTraversalRule
+```
+
+Detect:
+
+```text
+../
+..\
+encoded traversal
+double encoded traversal
+null-byte combinations
+mixed slash forms
+```
+
+Be careful with legitimate filesystem paths.
+
+---
+
+# 14. COMMAND INJECTION
+
+Create:
+
+```php
+CommandInjectionRule
+```
+
+Detect suspicious shell metacharacter combinations and command execution patterns.
+
+Do not block harmless text merely because it contains words such as:
+
+```text
+cat
+curl
+bash
+wget
+```
+
+Use context and confidence.
+
+---
+
+# 15. SSRF PROTECTION
+
+Create:
+
+```php
+SsrfRule
+```
+
+Provide protection around user-controlled URLs.
+
+Detect access to:
+
+```text
+localhost
+127.0.0.1
+private IP ranges
+link-local addresses
+cloud metadata endpoints
+internal network ranges
+IPv6 local addresses
+```
+
+Where possible, resolve DNS safely and validate the destination after resolution.
+
+Protect against DNS rebinding.
+
+Provide configurable allowlists.
+
+Example:
+
+```php
+'ssrf' => [
+
+    'enabled' => true,
+
+    'allowlist' => [
+        'api.example.com',
+    ],
+
+],
+```
+
+---
+
+# 16. BOT DETECTION
+
+Implement:
+
+```php
+BotDetector
+BehaviorAnalyzer
+```
+
+Detect:
+
+```text
+known scanners
+security scanners
+high-frequency clients
+suspicious user agents
+repeated 404s
+repeated 403s
+rapid endpoint traversal
+unusual request patterns
+```
+
+Do NOT simply block all bots.
+
+Legitimate crawlers may need access.
+
+Provide:
+
+```php
+trusted_bots
+blocked_bots
+```
+
+configuration.
+
+---
+
+# 17. APPLICATION-LEVEL DOS / DDOS
+
+Implement Redis/cache-backed counters.
+
+Track:
+
+```text
+IP
+route
+HTTP method
+authenticated user
+API token where safe
+```
+
+Example:
+
+```text
+IP 1.2.3.4
+100 requests / minute
+```
+
+then progressively respond:
+
+```text
+allow
+throttle
+temporary block
+```
+
+Use atomic Redis operations where possible.
+
+Do not create database writes for every request.
+
+This is critical for performance.
+
+---
+
+# 18. IP BLOCKING
+
+Create:
+
+```php
+BlockedIp
+```
+
+Support:
+
+```text
+temporary block
+permanent block
+allowlist
+blocklist
+```
+
+Example configuration:
+
+```php
+'ip' => [
+
+    'allowlist' => [],
+
+    'blocklist' => [],
+
+],
+```
+
+Support CIDR ranges.
+
+---
+
+# 19. FILE UPLOAD SECURITY
+
+This must be one of the strongest modules.
+
+Every upload should go through:
+
+```text
+Upload
+ ↓
+Filename validation
+ ↓
+Extension validation
+ ↓
+MIME detection
+ ↓
+Magic-byte/signature validation
+ ↓
+File structure validation
+ ↓
+Size validation
+ ↓
+Archive analysis
+ ↓
+Malware scanner
+ ↓
+Quarantine or allow
+```
+
+Never trust:
+
+```text
+extension
+Content-Type
+original filename
+```
+
+by themselves.
+
+---
+
+# 20. FILE SIGNATURE DETECTION
+
+Verify actual file signatures.
+
+For example:
+
+```text
+JPEG → JPEG signature
+PNG → PNG signature
+PDF → PDF signature
+ZIP → ZIP signature
+```
+
+Detect mismatches.
+
+Example:
+
+```text
+photo.jpg
+```
+
+with PHP content must be rejected.
+
+---
+
+# 21. EXECUTABLE FILE PROTECTION
+
+By default reject dangerous executable/script uploads.
+
+Detect extensions such as:
+
+```text
+php
+php3
+php4
+php5
+php7
+php8
+phtml
+phar
+cgi
+pl
+py
+sh
+bash
+exe
+dll
+so
+bin
+```
+
+Do not rely solely on extension.
+
+Analyze content/signature as well.
+
+Make this configurable.
+
+---
+
+# 22. MALWARE SCANNING
+
+Implement a scanner contract:
+
+```php
+interface MalwareScanner
+{
+    public function scan(string $path): ScanResult;
+}
+```
+
+Create:
+
+```php
+ClamAvScanner
+```
+
+and:
+
+```php
+NullScanner
+```
+
+If ClamAV is unavailable, do not pretend malware scanning occurred.
+
+Return:
+
+```text
+scanner_unavailable
+```
+
+and apply the configured policy.
+
+---
+
+# 23. QUARANTINE
+
+Suspicious files should be optionally moved into:
+
+```text
+storage/app/shield/quarantine
+```
+
+The quarantine directory must not be publicly accessible.
+
+Store metadata:
+
+```text
+original filename
+generated filename
+hash
+size
+MIME
+detected threats
+scan result
+timestamp
+```
+
+Never execute quarantined files.
+
+---
+
+# 24. ARCHIVE SECURITY
+
+For ZIP/TAR archives:
+
+Detect:
+
+```text
+path traversal
+absolute paths
+excessive compression ratio
+too many files
+nested archives
+executable files
+scripts
+symlinks
+```
+
+Protect against decompression bombs.
+
+Do not fully extract untrusted archives into the public filesystem.
+
+---
+
+# 25. IMAGE SECURITY
+
+For image uploads:
+
+Validate:
+
+```text
+real image structure
+dimensions
+MIME
+signature
+file size
+```
+
+Where practical, integrate with image processing libraries.
+
+Prevent image-based resource exhaustion.
+
+---
+
+# 26. SECURITY HEADERS
+
+Optionally add:
+
+```text
+Strict-Transport-Security
+X-Content-Type-Options
+X-Frame-Options
+Referrer-Policy
+Permissions-Policy
+Content-Security-Policy
+```
+
+Do not automatically impose a destructive CSP on an existing application.
+
+Support:
+
+```text
+disabled
+report-only
+enabled
+```
+
+for CSP.
+
+---
+
+# 27. ROUTE OBFUSCATION
+
+Implement the requested feature under:
+
+```text
+route_obfuscation
+```
+
+Do NOT describe this internally as encryption if it is simply replacing a route with an opaque alias.
+
+Example:
+
+```php
+'route_obfuscation' => [
+
+    'enabled' => true,
+
+    'routes' => [
+        'admin.users',
+        'admin.orders',
+        'admin.reports',
+    ],
+
+],
+```
+
+The original:
+
+```text
+/admin/users
+```
+
+could become:
+
+```text
+/r/X7k29LmP
+```
+
+Internally:
+
+```text
+/r/X7k29LmP
+       ↓
+RouteResolver
+       ↓
+admin.users
+       ↓
+Controller
+```
+
+The mapping must be cryptographically unpredictable.
+
+Do not expose the original route unnecessarily.
+
+---
+
+# 28. ROUTE GENERATION COMMAND
+
+Create:
+
+```bash
+php artisan shield:routes
+```
+
+This should:
+
+1. Read configured routes
+2. Generate aliases
+3. Store mappings
+4. Detect conflicts
+5. Preserve existing aliases where possible
+6. Provide a regeneration option
+
+Example:
+
+```bash
+php artisan shield:routes --regenerate
+```
+
+Do not silently break existing links.
+
+---
+
+# 29. ROUTE OBFUSCATION SAFETY
+
+Do not obfuscate:
+
+```text
+/
+login
+logout
+password reset routes
+OAuth callbacks
+webhooks
+public APIs
+health checks
+storage URLs
+```
+
+unless explicitly configured.
+
+Allow exclusions:
+
+```php
+'exclude' => [
+    'login',
+    'logout',
+    'api.*',
+    'webhooks.*',
+],
+```
+
+---
+
+# 30. SECURITY EVENTS
+
+Create database-backed security events.
+
+Suggested table:
+
+```text
+shield_security_events
+```
+
+Fields:
+
+```text
+id
+event_id
+type
+severity
+confidence
+risk_score
+ip_hash
+ip_address_encrypted
+user_id
+route
+method
+user_agent_hash
+country
+payload_hash
+action
+metadata
+created_at
+```
+
+Do not store raw attack payloads by default.
+
+Make raw payload logging opt-in.
+
+---
+
+# 31. PRIVACY
+
+Security logs must avoid unnecessary sensitive data.
+
+Redact:
+
+```text
+password
+password_confirmation
+authorization
+cookie
+api_token
+access_token
+refresh_token
+secret
+credit card data
+```
+
+Provide:
+
+```php
+SecuritySanitizer
+```
+
+for log data.
+
+Allow configurable retention:
+
+```php
+'retention_days' => 30,
+```
+
+Provide:
+
+```bash
+php artisan shield:cleanup
+```
+
+---
+
+# 32. EVENTS
+
+Create Laravel events:
+
+```php
+SecurityThreatDetected
+SecurityRequestBlocked
+SecurityRequestThrottled
+MaliciousUploadDetected
+IpBlocked
+IpUnblocked
+MalwareDetected
+```
+
+Developers should be able to listen to these events.
+
+---
+
+# 33. EXTENSIBILITY
+
+Developers must be able to create custom rules.
+
+Example:
+
+```php
+class MyCustomRule implements SecurityRule
+{
+    public function check(SecurityContext $context): RuleResult
+    {
+        // custom logic
+    }
+}
+```
+
+Provide registration:
+
+```php
+Shield::addRule(new MyCustomRule());
+```
+
+or a service-provider mechanism.
+
+Document this.
+
+---
+
+# 34. DRIVER SYSTEM
+
+Use interfaces for replaceable components.
+
+Examples:
+
+```text
+MalwareScanner
+BotDetector
+ThreatIntelligence
+RateLimiter
+Storage
+RouteObfuscator
+```
+
+Possible drivers:
+
+```text
+clamav
+null
+redis
+cache
+database
+```
+
+Make the architecture ready for future external threat-intelligence services.
+
+---
+
+# 35. PERFORMANCE
+
+This package will run on potentially every HTTP request.
+
+Performance is extremely important.
+
+DO NOT:
+
+* perform expensive database queries on every request
+* scan every request synchronously with external APIs
+* write a database row for every normal request
+* perform unnecessary DNS lookups
+* run antivirus scanning on normal requests
+* perform expensive archive processing unless an upload exists
+
+Use:
+
+```text
+Redis
+Laravel Cache
+in-memory configuration
+efficient regex
+compiled rule definitions
+sampling
+asynchronous jobs
+```
+
+where appropriate.
+
+Security must not destroy application performance.
+
+---
+
+# 36. ASYNC SECURITY OPERATIONS
+
+Malware scanning and expensive analysis should support queues.
+
+Example:
+
+```text
+Upload
+ ↓
+Basic validation
+ ↓
+Quarantine
+ ↓
+Queue malware scan
+ ↓
+ClamAV
+ ↓
+Result
+ ↓
+Allow / Delete / Quarantine
+```
+
+Support:
+
+```text
+sync
+queue
+```
+
+modes.
+
+---
+
+# 37. DASHBOARD
+
+Create an optional dashboard:
+
+```text
+/shield
+```
+
+Protect it with authentication/authorization.
+
+Dashboard sections:
+
+```text
+Overview
+Threats
+Blocked IPs
+Uploads
+Bots
+API Abuse
+Security Events
+Rules
+Configuration
+System Health
+```
+
+Overview:
+
+```text
+Requests
+Threats
+Blocked
+Throttled
+Malware
+Bot activity
+Top attacking IPs
+Top attacked routes
+```
+
+Use pagination.
+
+Do not load millions of records at once.
+
+---
+
+# 38. CLI COMMANDS
+
+Implement:
+
+```bash
+php artisan shield:install
+php artisan shield:status
+php artisan shield:scan
+php artisan shield:routes
+php artisan shield:cleanup
+php artisan shield:report
+php artisan shield:clear
+```
+
+Examples:
+
+```bash
+php artisan shield:status
+```
+
+should show:
+
+```text
+Shield: ENABLED
+Mode: balanced
+
+Firewall: ENABLED
+API protection: ENABLED
+Upload protection: ENABLED
+Bot detection: ENABLED
+DDoS protection: ENABLED
+Redis: AVAILABLE
+ClamAV: AVAILABLE
+```
+
+---
+
+# 39. TESTING
+
+This is mandatory.
+
+Use PHPUnit/Pest according to modern Laravel package conventions.
+
+Write unit and feature tests for:
+
+```text
+SQL injection detection
+XSS detection
+Path traversal
+SSRF
+Command injection
+Bot detection
+Rate limiting
+IP blocking
+Upload validation
+MIME spoofing
+Magic bytes
+PHP upload
+ZIP bombs
+Archive traversal
+ClamAV integration
+Route obfuscation
+Route resolution
+Security headers
+Sensitive data redaction
+Events
+Middleware
+API protection
+Web protection
+Configuration
+Installation
+```
+
+Also test false positives.
+
+For example:
+
+```text
+legitimate search query
+legitimate HTML content
+legitimate filenames
+legitimate URLs
+normal API requests
+normal bot/crawler
+```
+
+must not be incorrectly blocked.
+
+---
+
+# 40. SECURITY TEST SUITE
+
+Create a dedicated malicious-payload fixture directory:
+
+```text
+tests/
+├── Fixtures/
+│   ├── uploads/
+│   └── payloads/
+```
+
+Do not include real malware.
+
+Use harmless test payloads representing attack patterns.
+
+---
+
+# 41. STATIC ANALYSIS
+
+Configure:
+
+```text
+PHPStan
+PHP CS Fixer
+Pest/PHPUnit
+```
+
+Use a strict PHPStan level appropriate for the package.
+
+Ensure:
+
+```bash
+composer test
+composer analyse
+composer lint
+```
+
+work.
+
+---
+
+# 42. COMPOSER
+
+Create a clean package Composer configuration.
+
+Include:
+
+```text
+php
+illuminate/support
+illuminate/http
+illuminate/cache
+illuminate/routing
+```
+
+only when actually necessary.
+
+Optional integrations such as ClamAV should not unnecessarily become hard dependencies.
+
+---
+
+# 43. DATABASE DESIGN
+
+Use Laravel migrations.
+
+Database tables should be prefixed:
+
+```text
+shield_
+```
+
+Examples:
+
+```text
+shield_security_events
+shield_blocked_ips
+shield_route_maps
+shield_malware_scans
+```
+
+Allow users to disable database logging if desired.
+
+---
+
+# 44. CACHE DESIGN
+
+Use cache keys like:
+
+```text
+shield:ip:{hash}
+shield:route:{hash}
+shield:user:{hash}
+shield:bot:{hash}
+```
+
+Never expose raw sensitive values unnecessarily in cache keys.
+
+Hash identifiers where appropriate.
+
+---
+
+# 45. FAIL-SAFE BEHAVIOR
+
+Security software must not accidentally take the entire application offline.
+
+If:
+
+```text
+Redis fails
+database logging fails
+ClamAV unavailable
+```
+
+the package should follow configurable fallback behavior.
+
+Example:
+
+```php
+'failure_mode' => 'fail_open',
+```
+
+or:
+
+```php
+'failure_mode' => 'fail_closed',
+```
+
+But dangerous security-sensitive modules should document the consequences.
+
+Do not silently fail.
+
+Log system-level failures.
+
+---
+
+# 46. TRUSTED PROXIES
+
+Correctly handle client IP addresses behind:
+
+```text
+Cloudflare
+Nginx proxy
+load balancer
+reverse proxy
+```
+
+Do not blindly trust:
+
+```text
+X-Forwarded-For
+X-Real-IP
+```
+
+unless the proxy is trusted.
+
+Document trusted proxy configuration.
+
+---
+
+# 47. CLOUDFLARE / WAF INTEGRATION
+
+Do not try to replace a network-level WAF.
+
+Create an optional integration layer that could later support:
+
+```text
+Cloudflare
+AWS WAF
+Fail2ban
+Nginx
+```
+
+The package can expose events/webhooks for external systems.
+
+Example:
+
+```text
+Laravel Shield
+      ↓
+High-confidence attacker detected
+      ↓
+Integration
+      ↓
+External firewall
+```
+
+---
+
+# 48. RATE LIMIT ALGORITHM
+
+Prefer robust algorithms such as:
+
+```text
+token bucket
+sliding window
+leaky bucket
+```
+
+instead of a naive database counter.
+
+Use Redis atomic operations.
+
+Make the algorithm configurable.
+
+---
+
+# 49. SECURITY SCORE
+
+Create a risk score:
+
+```text
+0 - 29     LOW
+30 - 59    MEDIUM
+60 - 79    HIGH
+80 - 100   CRITICAL
+```
+
+These values must be configurable.
+
+Multiple rules can contribute to the score.
+
+Example:
+
+```text
+XSS detected              +40
+Known scanner             +20
+High request rate         +20
+Repeated 404s             +10
+```
+
+Then:
+
+```text
+Risk = 90
+Action = BLOCK
+```
+
+Do not use a score as a claim that an attack is definitely malicious.
+
+It represents the package's confidence/risk assessment.
+
+---
+
+# 50. RESPONSE BEHAVIOR
+
+When blocked, support:
+
+```text
+HTML
+JSON
+API JSON
+```
+
+For web:
+
+```http
+403 Forbidden
+```
+
+For API:
+
+```json
+{
+    "message": "Request blocked by security policy.",
+    "code": "SECURITY_REQUEST_BLOCKED"
+}
+```
+
+Do not reveal which security rule triggered if doing so could help attackers.
+
+Detailed information should go into internal logs.
+
+---
+
+# 51. SECURITY RESPONSE HEADERS
+
+On blocked responses, avoid leaking sensitive internal information.
+
+Do not return:
+
+```text
+rule names
+regex patterns
+internal paths
+database information
+server versions
+debug traces
+```
+
+---
+
+# 52. CONFIGURATION EXAMPLES
+
+Provide complete examples for:
+
+```text
+basic Laravel website
+Laravel API
+Laravel ecommerce
+Laravel admin panel
+Laravel file upload application
+strict security environment
+Cloudflare environment
+Redis environment
+ClamAV environment
+```
+
+---
+
+# 53. DOCUMENTATION
+
+Create:
+
+```text
+README.md
+CHANGELOG.md
+LICENSE
+SECURITY.md
+CONTRIBUTING.md
+docs/
+```
+
+Documentation should explain:
+
+```text
+Installation
+Configuration
+Web protection
+API protection
+Upload protection
+Malware scanning
+Bot detection
+DDoS/application DoS
+Rate limiting
+Route obfuscation
+Dashboard
+Events
+Custom rules
+Custom scanners
+Redis
+ClamAV
+Cloudflare
+Troubleshooting
+Performance
+Privacy
+Limitations
+```
+
+---
+
+# 54. SECURITY.md
+
+Clearly explain how to report vulnerabilities.
+
+Do not expose private security reports publicly.
+
+---
+
+# 55. README POSITIONING
+
+Do NOT claim:
+
+```text
+100% secure
+prevents all hacking
+unhackable
+stops all DDoS
+```
+
+Use accurate language such as:
+
+```text
+Application security firewall for Laravel.
+```
+
+Explain that:
+
+```text
+Laravel Shield provides defense-in-depth application-layer security.
+
+It does not replace:
+- secure coding
+- server hardening
+- HTTPS
+- WAF/CDN
+- firewall
+- operating system security
+- dependency updates
+- infrastructure-level DDoS mitigation
+```
+
+---
+
+# 56. PACKAGE UX
+
+The developer experience should be extremely simple.
+
+Basic:
+
+```bash
+composer require moh-sagor/laravel-shield
+php artisan shield:install
+php artisan migrate
+```
+
+Then:
+
+```text
+Protected.
+```
+
+Advanced users can modify:
+
+```text
+config/shield.php
+```
+
+---
+
+# 57. ENVIRONMENT VARIABLES
+
+Support:
+
+```env
+SHIELD_ENABLED=true
+SHIELD_MODE=balanced
+SHIELD_REDIS_PREFIX=shield
+SHIELD_CLAMAV_ENABLED=true
+SHIELD_ROUTE_OBFUSCATION=false
+```
+
+Do not force environment variables for every setting.
+
+Use sensible defaults.
+
+---
+
+# 58. SECURITY LOGGING
+
+Create a dedicated security log channel when configured.
+
+Example:
+
+```text
+storage/logs/shield.log
+```
+
+Use structured logging.
+
+Example:
+
+```json
+{
+    "event": "security.threat_detected",
+    "severity": "high",
+    "route": "/api/login",
+    "method": "POST",
+    "action": "throttle"
+}
+```
+
+Never log secrets.
+
+---
+
+# 59. ALERTING
+
+Create an extensible notification system.
+
+Possible channels:
+
+```text
+email
+Slack
+Discord
+Telegram
+webhook
+```
+
+Do not make all of these mandatory dependencies.
+
+Provide interfaces/events so integrations can be added later.
+
+---
+
+# 60. AUTOMATIC SECURITY REPORT
+
+Implement:
+
+```bash
+php artisan shield:report
+```
+
+Output:
+
+```text
+Laravel Shield Security Report
+
+Application:
+Laravel 13.x
+
+Shield:
+1.x
+
+Security Mode:
+balanced
+
+Threats:
+1,293
+
+Blocked:
+834
+
+Throttled:
+211
+
+Malware:
+4
+
+Top threat:
+XSS
+
+Redis:
+OK
+
+ClamAV:
+OK
+
+Route obfuscation:
+Enabled
+```
+
+---
+
+# 61. CODE QUALITY
+
+Do not generate fake implementations.
+
+Do not create placeholder methods that pretend to provide protection.
+
+Avoid:
+
+```php
+// TODO implement security
+return true;
+```
+
+Every implemented feature must actually work.
+
+If a feature requires an external service, create a proper integration and clearly report when that service is unavailable.
+
+---
+
+# 62. DO NOT OVERENGINEER THE FIRST VERSION
+
+Build in phases.
+
+## Phase 1
+
+Implement:
+
+```text
+Package skeleton
+Service provider
+Configuration
+Installation command
+Middleware
+Security engine
+Rule system
+SQL injection detection
+XSS detection
+Path traversal
+Command injection
+Request-size protection
+Rate limiting
+IP blocking
+Security logging
+Events
+Tests
+```
+
+## Phase 2
+
+Implement:
+
+```text
+Upload security
+MIME validation
+Magic-byte validation
+Quarantine
+Archive analysis
+ClamAV
+```
+
+## Phase 3
+
+Implement:
+
+```text
+Bot detection
+Behavior analysis
+Advanced API protection
+```
+
+## Phase 4
+
+Implement:
+
+```text
+Route obfuscation
+Route mapping
+CLI tools
+```
+
+## Phase 5
+
+Implement:
+
+```text
+Dashboard
+Reports
+Notifications
+External WAF integrations
+```
+
+---
+
+# 63. DEVELOPMENT PROCESS
+
+Before writing code:
+
+1. Inspect the repository.
+2. Determine whether it is empty or already contains a package.
+3. Determine Laravel/PHP compatibility.
+4. Create the package architecture.
+5. Explain the architecture briefly.
+6. Then implement it.
+
+Do NOT rewrite unrelated user code.
+
+Do NOT delete existing files without explicit reason.
+
+Do NOT modify the user's Laravel application's business logic.
+
+---
+
+# 64. GIT WORKFLOW
+
+Make clean commits by feature.
+
+Suggested:
+
+```text
+feat: initialize laravel shield package
+feat: add security firewall engine
+feat: add sql injection detector
+feat: add xss detector
+feat: add request rate limiting
+feat: add ip blocking
+feat: add upload security
+feat: add clamav integration
+feat: add route obfuscation
+feat: add security dashboard
+test: add comprehensive security tests
+docs: add package documentation
+```
+
+Do not commit secrets.
+
+Do not commit:
+
+```text
+.env
+API keys
+tokens
+credentials
+malware samples
+private certificates
+```
+
+---
+
+# 65. IMPORTANT: DO NOT BREAK EXISTING APPLICATIONS
+
+The package must be designed for installation into an existing Laravel project.
+
+It must not assume:
+
+```text
+specific database schema
+specific authentication system
+specific frontend
+specific API authentication package
+specific filesystem
+specific queue system
+specific cache driver
+```
+
+It should integrate with Laravel's existing abstractions.
+
+---
+
+# 66. FINAL ACCEPTANCE TEST
+
+The implementation is only considered complete when a fresh Laravel application can run:
+
+```bash
+composer require moh-sagor/laravel-shield
+php artisan shield:install
+php artisan migrate
+```
+
+and then successfully demonstrate:
+
+### Web
+
+```text
+normal request → allowed
+XSS test → detected
+SQL injection test → detected
+path traversal → detected
+scanner → detected
+```
+
+### API
+
+```text
+normal API request → allowed
+high request rate → throttled
+repeated abuse → blocked
+```
+
+### Upload
+
+```text
+valid JPG → allowed
+fake JPG/PHP → blocked
+dangerous executable → blocked
+malicious archive structure → blocked
+ClamAV malware → quarantined/blocked
+```
+
+### Route
+
+Configured:
+
+```php
+'admin.users'
+```
+
+becomes an opaque URL.
+
+Requesting the opaque URL correctly reaches the original Laravel route/controller.
+
+### Dashboard
+
+Security events are visible.
+
+### Tests
+
+All automated tests pass.
+
+---
+
+# 67. FINAL DELIVERABLE
+
+At the end provide:
+
+1. Complete package source code
+2. Composer configuration
+3. Service provider
+4. Configuration file
+5. Migrations
+6. Middleware
+7. Security engine
+8. All implemented detectors
+9. Upload scanner
+10. ClamAV integration
+11. Rate limiter
+12. Bot detection
+13. IP blocking
+14. Route obfuscation
+15. Events
+16. Dashboard
+17. CLI commands
+18. Tests
+19. Documentation
+20. README
+21. SECURITY.md
+22. CHANGELOG.md
+23. Installation instructions
+24. Example configuration
+25. Security limitations
+26. Performance considerations
+
+Before declaring the project complete, run the available test suite and static analysis.
+
+If something cannot be implemented safely or completely, explicitly document it instead of pretending it works.
+
+The final result should look and behave like a serious open-source Laravel security package rather than a demo or collection of middleware snippets.
+
+
+need it for laravel 5 to 13 and php 7.2 to 8.4
+and my package will be sagor/laravel-security
+
+
+

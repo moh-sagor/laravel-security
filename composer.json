@@ -1,0 +1,77 @@
+{
+    "name": "sagor/laravel-security",
+    "version": "1.0.0",
+    "description": "Production-ready defense-in-depth security firewall package for Laravel applications protecting against web threats, API abuse, malicious uploads, bots, and application-layer DoS.",
+    "keywords": [
+        "laravel",
+        "security",
+        "firewall",
+        "waf",
+        "sqli",
+        "xss",
+        "ssrf",
+        "bot-detection",
+        "rate-limiting",
+        "upload-security",
+        "route-obfuscation",
+        "shield"
+    ],
+    "homepage": "https://github.com/moh-sagor/laravel-security",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Moh Sagor",
+            "email": "sagor@example.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.2 || ^7.3 || ^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3 || ^8.4",
+        "illuminate/support": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/http": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/cache": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/routing": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/console": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/database": "^5.5 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5 || ^9.5 || ^10.0 || ^11.0",
+        "orchestra/testbench": "^3.8 || ^4.0 || ^5.0 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sagor\\LaravelSecurity\\": "src/"
+        },
+        "files": [
+            "src/Support/Helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sagor\\LaravelSecurity\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Sagor\\LaravelSecurity\\LaravelSecurityServiceProvider",
+                "Sagor\\LaravelSecurity\\ShieldServiceProvider"
+            ],
+            "aliases": {
+                "LaravelSecurity": "Sagor\\LaravelSecurity\\Facades\\LaravelSecurity",
+                "Shield": "Sagor\\LaravelSecurity\\Facades\\Shield"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
