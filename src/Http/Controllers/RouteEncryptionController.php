@@ -87,6 +87,10 @@ class RouteEncryptionController
             $request->getContent()
         );
 
+        if ($request->headers) {
+            $subRequest->headers->replace($request->headers->all());
+        }
+
         if ($request->hasSession()) {
             $subRequest->setLaravelSession($request->session());
         }

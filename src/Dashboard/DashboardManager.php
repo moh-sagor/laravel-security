@@ -44,7 +44,11 @@ class DashboardManager
                     ->get();
                 $stats['top_threats'] = $top ? $top->toArray() : [];
 
-                // Real 24-hour time-series data for chart
+                // Real 24-hour time-series data for chart (optimized)
+                $twentyFourHoursAgo = date('Y-m-d H:00:00', strtotime('-23 hours'));
+                $recentEvents = SecurityEvent::where('created_at', '>=', $twentyFourHoursAgo)
+                    ->get(['created_at', 'action']);
+
                 $labels = [];
                 $counts = [];
                 $blocked = [];
@@ -54,14 +58,14 @@ class DashboardManager
                     $hourNext = date('Y-m-d H:59:59', strtotime("-{$i} hours"));
                     $label = date('H:00', strtotime("-{$i} hours"));
 
-                    $totalCount = SecurityEvent::whereBetween('created_at', [$hourTime, $hourNext])->count();
-                    $blockedCount = SecurityEvent::whereBetween('created_at', [$hourTime, $hourNext])
-                        ->where('action', 'block')
-                        ->count();
+                    $matching = $recentEvents->filter(function ($item) use ($hourTime, $hourNext) {
+                        $c = (string) $item->created_at;
+                        return $c >= $hourTime && $c <= $hourNext;
+                    });
 
                     $labels[] = $label;
-                    $counts[] = $totalCount;
-                    $blocked[] = $blockedCount;
+                    $counts[] = $matching->count();
+                    $blocked[] = $matching->where('action', 'block')->count();
                 }
 
                 $stats['hourly_labels'] = $labels;

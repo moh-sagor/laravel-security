@@ -15,21 +15,29 @@ class IpResolver
     public static function resolve(Request $request): string
     {
         $trustedConfig = config('security.trusted_proxies', config('shield.trusted_proxies', []));
-        $headers = isset($trustedConfig['headers']) ? (array) $trustedConfig['headers'] : [
-            'X-Forwarded-For',
-            'CF-Connecting-IP',
-            'X-Real-IP',
-        ];
+        $trustAll = isset($trustedConfig['trust_all']) ? (bool) $trustedConfig['trust_all'] : false;
+        $trustedProxies = isset($trustedConfig['proxies']) ? (array) $trustedConfig['proxies'] : [];
+        $remoteIp = (string) $request->server('REMOTE_ADDR', '');
 
-        foreach ($headers as $header) {
-            $value = $request->header($header);
-            if ($value) {
-                // If multiple IPs present (e.g. "client, proxy1, proxy2"), extract first valid client IP
-                $ips = explode(',', $value);
-                foreach ($ips as $ip) {
-                    $ip = trim($ip);
-                    if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                        return $ip;
+        $isTrusted = $trustAll || (!empty($remoteIp) && in_array($remoteIp, $trustedProxies));
+
+        if ($isTrusted) {
+            $headers = isset($trustedConfig['headers']) ? (array) $trustedConfig['headers'] : [
+                'X-Forwarded-For',
+                'CF-Connecting-IP',
+                'X-Real-IP',
+            ];
+
+            foreach ($headers as $header) {
+                $value = $request->header($header);
+                if ($value) {
+                    // If multiple IPs present (e.g. "client, proxy1, proxy2"), extract first valid client IP
+                    $ips = explode(',', $value);
+                    foreach ($ips as $ip) {
+                        $ip = trim($ip);
+                        if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                            return $ip;
+                        }
                     }
                 }
             }

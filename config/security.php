@@ -25,8 +25,8 @@ return [
     |
     */
 
-    'auto_apply_middleware' => env('SECURITY_AUTO_MIDDLEWARE', false),
-    'auto_load_migrations' => env('SECURITY_AUTO_MIGRATIONS', false),
+    'auto_apply_middleware' => env('SECURITY_AUTO_MIDDLEWARE', true),
+    'auto_load_migrations' => env('SECURITY_AUTO_MIGRATIONS', true),
 
     /*
     |--------------------------------------------------------------------------

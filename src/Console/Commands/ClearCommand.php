@@ -27,7 +27,15 @@ class ClearCommand extends Command
         $this->info('Clearing temporary security firewall cache...');
 
         try {
-            Cache::flush();
+            if (method_exists(Cache::getStore(), 'tags')) {
+                try {
+                    Cache::tags(['security', 'shield'])->flush();
+                } catch (\Throwable $t) {
+                    Cache::flush();
+                }
+            } else {
+                Cache::flush();
+            }
             $this->info('✓ Security firewall cache cleared successfully.');
         } catch (\Throwable $e) {
             $this->error('Failed to flush cache: ' . $e->getMessage());

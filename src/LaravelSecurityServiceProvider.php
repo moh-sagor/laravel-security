@@ -234,14 +234,14 @@ class LaravelSecurityServiceProvider extends ServiceProvider
             $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
 
             if (method_exists($kernel, 'prependMiddlewareToGroup')) {
-                if (config('security.auto_apply_middleware', true)) {
-                    $kernel->prependMiddlewareToGroup('web', SecurityMiddleware::class);
-                    $kernel->prependMiddlewareToGroup('web', SecurityUploadMiddleware::class);
-                    $kernel->prependMiddlewareToGroup('api', SecurityApiMiddleware::class);
-                }
-
                 if (config('security.route_encryption.enabled', true)) {
                     $kernel->prependMiddlewareToGroup('web', SecurityRouteEncryptionMiddleware::class);
+                }
+
+                if (config('security.auto_apply_middleware', true)) {
+                    $kernel->prependMiddlewareToGroup('api', SecurityApiMiddleware::class);
+                    $kernel->prependMiddlewareToGroup('web', SecurityUploadMiddleware::class);
+                    $kernel->prependMiddlewareToGroup('web', SecurityMiddleware::class);
                 }
             } elseif (method_exists($kernel, 'pushMiddleware')) {
                 if (config('security.auto_apply_middleware', true)) {
