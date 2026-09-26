@@ -16,6 +16,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Zero-Configuration Automatic Middleware & Migrations
+    |--------------------------------------------------------------------------
+    |
+    | When set to true, the package automatically attaches firewall and upload
+    | security middleware to web/api groups and auto-loads database migrations
+    | with zero manual setup required.
+    |
+    */
+
+    'auto_apply_middleware' => env('SECURITY_AUTO_MIDDLEWARE', false),
+    'auto_load_migrations' => env('SECURITY_AUTO_MIGRATIONS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Security Mode
     |--------------------------------------------------------------------------
     |
@@ -344,6 +358,7 @@ return [
     'dashboard' => [
         'enabled' => true,
         'path' => 'security',
+        'require_auth' => (bool) env('SECURITY_DASHBOARD_AUTH', false),
         'middleware' => ['web'],
     ],
 

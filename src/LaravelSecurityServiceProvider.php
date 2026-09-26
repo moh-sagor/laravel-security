@@ -143,8 +143,12 @@ class LaravelSecurityServiceProvider extends ServiceProvider
             ]);
         }
 
-        // 2. Load Blade Views
+        // 2. Load Blade Views & Migrations
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'laravel-security');
+
+        if (config('security.auto_load_migrations', true)) {
+            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        }
 
         // 3. Register Middleware aliases
         $router = $this->app['router'];
@@ -155,8 +159,35 @@ class LaravelSecurityServiceProvider extends ServiceProvider
             $router->aliasMiddleware('security.upload', SecurityUploadMiddleware::class);
         }
 
-        // 4. Register Dashboard routes
+        // 4. Zero-Config Automatic Global & Group Middleware Injection
+        $this->registerGlobalMiddleware();
+
+        // 5. Register Dashboard & Cyber Desk routes
         $this->registerDashboardRoutes();
+    }
+
+    /**
+     * Automatically inject firewall & upload security middleware into HTTP kernel.
+     *
+     * @return void
+     */
+    protected function registerGlobalMiddleware()
+    {
+        if (!config('security.enabled', true) || !config('security.auto_apply_middleware', true)) {
+            return;
+        }
+
+        if ($this->app->bound(\Illuminate\Contracts\Http\Kernel::class)) {
+            $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+
+            if (method_exists($kernel, 'prependMiddlewareToGroup')) {
+                $kernel->prependMiddlewareToGroup('web', SecurityMiddleware::class);
+                $kernel->prependMiddlewareToGroup('web', SecurityUploadMiddleware::class);
+                $kernel->prependMiddlewareToGroup('api', SecurityApiMiddleware::class);
+            } elseif (method_exists($kernel, 'pushMiddleware')) {
+                $kernel->pushMiddleware(SecurityMiddleware::class);
+            }
+        }
     }
 
     /**
@@ -168,6 +199,10 @@ class LaravelSecurityServiceProvider extends ServiceProvider
     {
         $path = (string) config('security.dashboard.path', 'security');
         $middleware = (array) config('security.dashboard.middleware', ['web']);
+
+        if (config('security.dashboard.require_auth', false) && !in_array('auth', $middleware)) {
+            $middleware[] = 'auth';
+        }
 
         $cleanPath = trim($path, '/');
         Route::middleware($middleware)->group(function () use ($cleanPath) {

@@ -18,6 +18,34 @@ class SecurityDashboardController
      */
     public function index(Request $request)
     {
+        // Enforce Authentication if enabled in config ('require_auth' => true or SECURITY_DASHBOARD_AUTH=true)
+        if (config('security.dashboard.require_auth', false)) {
+            $user = $request->user();
+            $isLoggedIn = $user !== null || (function_exists('auth') && auth()->check());
+
+            if (!$isLoggedIn) {
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json([
+                        'message' => 'Unauthenticated access to Security Dashboard.',
+                        'code' => 'UNAUTHENTICATED_SECURITY_ACCESS',
+                    ], 401);
+                }
+
+                if (function_exists('route') && \Illuminate\Support\Facades\Route::has('login')) {
+                    return redirect()->guest(route('login'));
+                }
+
+                if (view()->exists('laravel-security::blocked')) {
+                    return response(view('laravel-security::blocked', [
+                        'reason' => 'ACCESS DENIED: Only authenticated logged-in users are authorized to access the Security Command Center & Cyber Desk Workstation.',
+                        'ip' => $request->ip(),
+                    ]), 403);
+                }
+
+                return response('Access Denied: Only authenticated logged-in users can access the Security Dashboard.', 403);
+            }
+        }
+
         $manager = new DashboardManager();
         $stats = $manager->getOverviewStats();
 

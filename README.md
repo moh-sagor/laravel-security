@@ -67,37 +67,38 @@ It comes equipped with an interactive **Cyber Command Center Dashboard** and **C
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Installation & Zero-Configuration Setup
 
-### 1. Require the Package
+### ⚡ Instant Setup (Zero Configuration Required)
 
-Install via Composer:
+`sagor/laravel-security` features **Zero-Configuration Auto-Setup**. Upon installation, the package automatically:
+1. **Auto-registers Firewall Middleware** (`SecurityMiddleware` and `SecurityUploadMiddleware` on `web`, `SecurityApiMiddleware` on `api`).
+2. **Auto-loads Database Migrations** for security audit tables.
+3. **Auto-registers Workstation Routes** (`/security` and `/security/attempts`).
 
 ```bash
+# 1. Require Package
 composer require sagor/laravel-security
+
+# 2. Run Database Migrations
+php artisan migrate
 ```
 
-### 2. Run the Installer Command
+**That's it! Your application is now fully protected and the Cyber Desk is active at `http://localhost:8000/security`.**
 
-Publish configuration, migrations, views, and initialize security storage directories:
+---
+
+### Optional Manual Publishing
+
+If you wish to customize configuration or views, run the installer command:
 
 ```bash
 php artisan security:install
 ```
 
-*(You can also use `php artisan shield:install`)*
-
-### 3. Run Database Migrations
-
-Execute migrations to create the required security event tables (`shield_security_events`, `shield_blocked_ips`, `shield_route_maps`, `shield_malware_scans`):
-
-```bash
-php artisan migrate
-```
-
 ---
 
-## 🛡️ Middleware Configuration
+## 🛡️ Middleware Configuration (Optional)
 
 ### Laravel 11, 12, and 13 (`bootstrap/app.php`)
 
@@ -162,10 +163,12 @@ Route::middleware(['security', 'security.upload'])->group(function () {
 
 ## 🖥️ Cyber Desk Workstation & Dashboard
 
-Access the built-in security workstation in your web browser:
+Access the built-in security workstation in your web browser (**Protected: Accessible ONLY to authenticated logged-in users**):
 
 - **Cyber Command Center Overview**: `http://localhost:8000/security`
 - **Cyber Desk All Attempts Workstation**: `http://localhost:8000/security/attempts`
+
+> **🔒 Security Note**: Unauthenticated guests attempting to visit these routes are automatically blocked with HTTP 403 Forbidden or redirected to the application login screen.
 
 ### Features of the Cyber Desk:
 - **Search & Filter Console**: Filter attempts by keyword, IP hash, route URI, threat vector (SQLi, XSS, Path Traversal, Bot Scan, Upload Threat, Rate Limit), severity, action, and pagination limits.
